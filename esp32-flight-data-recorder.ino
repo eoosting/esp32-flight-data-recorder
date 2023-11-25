@@ -1,3 +1,4 @@
+
 //amoled include file from https://github.com/VolosR/TDisplayAmoled
 #include "rm67162.h"
 #include <TFT_eSPI.h>
@@ -33,6 +34,7 @@ const float sea_press = 1014;  // set the sealevel pressure for the altitude cal
 #define FORMAT_LITTLEFS_IF_FAILED false
 
 
+String FDversionNum = "0.5.0";
 
 
 // set up some font and line size values ... may need to be chaged if not using the amoled lily go esp32: https://github.com/Xinyuan-LilyGO/T-Display-S3-AMOLED
@@ -171,32 +173,32 @@ void readFile(fs::FS &fs, const char * path){
     file.close();
 }
 void writeFile(fs::FS &fs, const char * path, const char * message){
-    Serial.printf("Writing file: %s\r\n", path);
+    //Serial.printf("Writing file: %s\r\n", path);
 
     fs::File file = fs.open(path, FILE_WRITE);
     if(!file){
-        Serial.println("- failed to open file for writing");
+        //Serial.println("- failed to open file for writing");
         return;
     }
     if(file.print(message)){
-        Serial.println("- file written");
+        //Serial.println("- file written");
     } else {
-        Serial.println("- write failed");
+        //Serial.println("- write failed");
     }
     file.close();
 }
 void appendFile(fs::FS &fs, const char * path, const char * message){
-    Serial.printf("Appending to file: %s\r\n", path);
+    //Serial.printf("Appending to file: %s\r\n", path);
 
     fs::File file = fs.open(path, FILE_APPEND);
     if(!file){
-        Serial.println("- failed to open file for appending");
+        //Serial.println("- failed to open file for appending");
         return;
     }
     if(file.print(message)){
-        Serial.println("- message appended");
+        //Serial.println("- message appended");
     } else {
-        Serial.println("- append failed");
+        //Serial.println("- append failed");
     }
     file.close();
 }
@@ -291,7 +293,7 @@ void setup()
 
   FDStorage.begin("flight_recorder", false);
   FDStorageFlightCounter = FDStorage.getUInt("flightCounter", 0);
-  Serial.printf("current flightCounter is set to %u\n",FDStorageFlightCounter);
+  //Serial.printf("current flightCounter is set to %u\n",FDStorageFlightCounter);
   flightNum = FDStorageFlightCounter + 1;
 
   sprite.fillSprite(TFT_BLACK);
@@ -307,14 +309,14 @@ void setup()
   Wire.begin(s3_sda, s3_scl);  //  adjust ESP32 pins if needed
 
   // bring the barrometer on line
-  while (!Serial);
-  Serial.println(__FILE__);
-  Serial.println("Barometer Test");
-  Serial.print("MS5611_LIB_VERSION: ");
-  Serial.println(MS5611_LIB_VERSION);
+  //while (!Serial);
+  //Serial.println(__FILE__);
+  //Serial.println("Barometer Test");
+  //Serial.print("MS5611_LIB_VERSION: ");
+  //Serial.println(MS5611_LIB_VERSION);
   if (MS5611.begin() == true)
   {
-    Serial.println("MS5611 (barometer) found.");
+    //Serial.println("MS5611 (barometer) found.");
   }
   else
   {
@@ -322,11 +324,11 @@ void setup()
     delay(500);
     while (1);
   }
-  Serial.println("");
+  //Serial.println("");
 
   /* Initialise the sensor */
-  while (!Serial);
-  Serial.println("Accelerometer Test");
+  //while (!Serial);
+  //Serial.println("Accelerometer Test");
   if (!kxAccel.begin())
   {
     Serial.println("KX134 (accelerometer) not found. halt.");
@@ -334,9 +336,11 @@ void setup()
     while (1)
       ;
   }
-  else {Serial.println("KX134 (accelerometer) found.");}
+  else {
+    //Serial.println("KX134 (accelerometer) found.");
+  }
   if (kxAccel.softwareReset())
-    Serial.println("Accel Reset.");
+    //Serial.println("Accel Reset.");
 
   // Give some time for the accelerometer to reset.
   // It needs two, but give it five for good measure.
@@ -357,7 +361,7 @@ void setup()
 
   //accel.setRange(ADXL343_RANGE_16_G);
   //accel.printSensorDetails();
-  Serial.println("");
+  //Serial.println("");
 
   
 
@@ -407,7 +411,7 @@ void setFlightCondition(int newCondition) {
   if (newCondition == 5) {  // flight detected
     FDStorage.putUInt("flightCounter", flightNum);  // write our flight number to preferences storage
     FDStorageFlightCounter = FDStorage.getUInt("flightCounter", 0);
-    Serial.printf("in flight ... FD Storage flightCounter is set to %u\n",FDStorageFlightCounter);
+    //Serial.printf("in flight ... FD Storage flightCounter is set to %u\n",FDStorageFlightCounter);
     writeFile(LittleFS, "/flight_data.csv", csv_description);
     char buffer[100];
     sprintf(buffer, csv_formats , csv_vars);
@@ -415,7 +419,7 @@ void setFlightCondition(int newCondition) {
     //appendFile(LittleFS, "/hello.txt", "World!\r\n");
     //readFile(LittleFS, "/hello.txt");
     //Serial.print(csv_description);
-    printCSVtoSerialOutput();
+    //printCSVtoSerialOutput();
     loopNum = 0;
   }
   if (newCondition == 8) { // we've landed!
@@ -425,7 +429,7 @@ void setFlightCondition(int newCondition) {
     sprintf(buffer, csv_formats , csv_vars);
     appendFile(LittleFS,  "/flight_data.csv", buffer);
     Serial.printf("landed ... FD Storage flightCounter is set to %u\n",FDStorageFlightCounter);
-    printCSVtoSerialOutput();
+    //printCSVtoSerialOutput();
   }
 }
 
@@ -564,7 +568,9 @@ void readButtons(){
     draw();
     FDStorageFlightCounter = FDStorage.getUInt("flightCounter", 0);
     flightNum = FDStorageFlightCounter + 1;
+    Serial.printf("Version: %s\n",FDversionNum);
     Serial.printf("flight reset ... FD Storage flightCounter is set to %u\n",FDStorageFlightCounter);
+    listDir(LittleFS, "/", 3);
     readFile(LittleFS,  "/flight_data.csv");
     delay(10000);
     setFlightCondition(1); // move to ground hold
