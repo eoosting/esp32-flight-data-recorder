@@ -22,9 +22,16 @@ outputData acclEvent; // Struct for the accelerometer's data
 
 // load the library and create the pressure sensor object
 // from https://github.com/RobTillaart/MS5611/blob/master/examples/MS5611_minimal_ESP32/MS5611_minimal_ESP32.ino
-#include "MS5611.h"
-MS5611 MS5611(0x77);
-const float sea_press = 1014;  // set the sealevel pressure for the altitude calculations
+//#include "MS5611.h"
+//MS5611 MS5611(0x77);
+
+const float sea_press = 1016;  // set the sealevel pressure for the altitude calculations
+
+// load pressure sensor
+// from https://github.com/adafruit/Adafruit_MPL3115A2_Library/blob/master/examples/testmpl3115a2/testmpl3115a2.ino
+#include <Adafruit_MPL3115A2.h>
+Adafruit_MPL3115A2 baro;
+
 
 
 // https://github.com/espressif/arduino-esp32/blob/master/libraries/LittleFS/examples/LITTLEFS_test/LITTLEFS_test.ino
@@ -34,7 +41,7 @@ const float sea_press = 1014;  // set the sealevel pressure for the altitude cal
 #define FORMAT_LITTLEFS_IF_FAILED false
 
 
-String FDversionNum = "0.5.0";
+String FDversionNum = "0.6.0";
 
 
 // set up some font and line size values ... may need to be chaged if not using the amoled lily go esp32: https://github.com/Xinyuan-LilyGO/T-Display-S3-AMOLED
@@ -314,6 +321,7 @@ void setup()
   //Serial.println("Barometer Test");
   //Serial.print("MS5611_LIB_VERSION: ");
   //Serial.println(MS5611_LIB_VERSION);
+  /* ... enable the MS5611
   if (MS5611.begin() == true)
   {
     //Serial.println("MS5611 (barometer) found.");
@@ -325,6 +333,18 @@ void setup()
     while (1);
   }
   //Serial.println("");
+  */
+
+  if (!baro.begin()) {
+    Serial.println("MPL3115A2 (barometer) not found. halt.");
+    delay(500);
+    while(1);
+  }
+
+  // use to set sea level pressure for current location
+  // this is needed for accurate altitude measurement
+  // STD SLP = 1013.26 hPa
+  baro.setSeaPressure(sea_press);
 
   /* Initialise the sensor */
   //while (!Serial);
@@ -601,7 +621,7 @@ void getAccel() {
 }
 
 void getBaro() {
-  MS5611.read();           //  note no error checking => "optimistic".
+  //MS5611.read();           //  note no error checking => "optimistic".
   //Serial.print("T(C):\t");
   //Serial.print(MS5611.getTemperature(), 2);
   //Serial.print("\tP(mb):\t");
@@ -610,15 +630,23 @@ void getBaro() {
   //Serial.print(getAltitude(MS5611.getPressure(),MS5611.getTemperature()) , 2);
   //Serial.println();
 
-  temperature = MS5611.getTemperature();
+
+  /* ... old way for MS5611
+  temperature = MS5611.getTemperature();  
+  pressure = MS5611.getPressure();
+  altitude = getAltitude(pressure,temperature);
+  */
+
+  pressure = baro.getPressure();
+  altitude = baro.getAltitude();
+  temperature = baro.getTemperature();
+
   if (tempMin > temperature) {tempMin = temperature;} 
   if (tempMax < temperature) {tempMax = temperature;}
 
-  pressure = MS5611.getPressure();
   if (pressMin > pressure) {pressMin = pressure;} 
   if (pressMax < pressure) {pressMax = pressure;}
 
-  altitude = getAltitude(pressure,temperature);
   if (altMin > altitude) {altMin = altitude;} 
   if (altMax < altitude) {altMax = altitude;}
   altDelta = (altitude - altGL);
