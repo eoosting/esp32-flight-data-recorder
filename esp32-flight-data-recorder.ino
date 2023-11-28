@@ -29,9 +29,14 @@ const float sea_press = 1016;  // set the sealevel pressure for the altitude cal
 
 // load pressure sensor
 // from https://github.com/adafruit/Adafruit_MPL3115A2_Library/blob/master/examples/testmpl3115a2/testmpl3115a2.ino
-#include <Adafruit_MPL3115A2.h>
-Adafruit_MPL3115A2 baro;
+//#include <Adafruit_MPL3115A2.h>
+//Adafruit_MPL3115A2 baro;
 
+// https://github.com/sparkfun/SparkFun_MPL3115A2_Breakout_Arduino_Library/blob/master/examples/SparkFunAltimeter/SparkFunAltimeter.ino
+#include <Wire.h>
+#include "SparkFunMPL3115A2.h"
+//Create an instance of the object
+MPL3115A2 baro;
 
 
 // https://github.com/espressif/arduino-esp32/blob/master/libraries/LittleFS/examples/LITTLEFS_test/LITTLEFS_test.ino
@@ -41,7 +46,7 @@ Adafruit_MPL3115A2 baro;
 #define FORMAT_LITTLEFS_IF_FAILED false
 
 
-String FDversionNum = "0.6.0";
+String FDversionNum = "0.6.1";
 
 
 // set up some font and line size values ... may need to be chaged if not using the amoled lily go esp32: https://github.com/Xinyuan-LilyGO/T-Display-S3-AMOLED
@@ -335,16 +340,13 @@ void setup()
   //Serial.println("");
   */
 
-  if (!baro.begin()) {
-    Serial.println("MPL3115A2 (barometer) not found. halt.");
-    delay(500);
-    while(1);
-  }
+  baro.begin(); // Get sensor online
+  //Configure the sensor
+  baro.setModeAltimeter(); // Measure altitude above sea level in meters
+  //myPressure.setModeBarometer(); // Measure pressure in Pascals from 20 to 110 kPa
+  baro.setOversampleRate(5); // Set Oversample to the recommended 128
+  baro.enableEventFlags(); // Enable all three pressure and temp event flags 
 
-  // use to set sea level pressure for current location
-  // this is needed for accurate altitude measurement
-  // STD SLP = 1013.26 hPa
-  baro.setSeaPressure(sea_press);
 
   /* Initialise the sensor */
   //while (!Serial);
@@ -637,9 +639,9 @@ void getBaro() {
   altitude = getAltitude(pressure,temperature);
   */
 
-  pressure = baro.getPressure();
-  altitude = baro.getAltitude();
-  temperature = baro.getTemperature();
+  pressure = baro.readPressure();
+  altitude = baro.readAltitude();
+  temperature = baro.readTemp();
 
   if (tempMin > temperature) {tempMin = temperature;} 
   if (tempMax < temperature) {tempMax = temperature;}
